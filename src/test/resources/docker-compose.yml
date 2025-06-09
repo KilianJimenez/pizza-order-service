@@ -1,0 +1,31 @@
+version: '3.7'
+
+networks:
+  pizza-service:
+    name: 'pizza-service'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    hostname: rabbitmq-pizza
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 4s
+      timeout: 4s
+      retries: 4
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    networks:
+      - pizza-service
+
+  pizza-oven-service:
+    image: pizza-oven-service:1.0.0
+    hostname: pizza-service
+    networks:
+        - pizza-service
+    depends_on:
+        rabbitmq:
+            condition: service_healthy
+    environment:
+      SPRING_AMQP_DESERIALIZATION_TRUST_ALL: 'true'
